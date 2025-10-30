@@ -1,0 +1,74 @@
+name: "Terraform AWS Prod - Apply"
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'environments/aws-prod/**'
+      - 'modules/aws/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  terraform-apply:
+    name: 'Terraform Apply - AWS Prod'
+    runs-on: ubuntu-latest
+    environment:
+      name: aws-production
+      url: https://console.aws.amazon.com
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+        working-directory: ./environments/aws-prod
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+        working-directory: ./environments/aws-prod
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -input=false -out=tfplan
+        working-directory: ./environments/aws-prod
+
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply -auto-approve -input=false tfplan
+        working-directory: ./environments/aws-prod
+
+      - name: Terraform Output
+        id: output
+        if: success()
+        run: terraform output -json
+        working-directory: ./environments/aws-prod
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: aws-prod-tfplan
+          path: environments/aws-prod/tfplan
+          retention-days: 30

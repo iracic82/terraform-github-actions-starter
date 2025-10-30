@@ -1,0 +1,64 @@
+#cloud-config
+# Cloud-init configuration for Azure VM
+
+package_upgrade: true
+
+packages:
+  - git
+  - curl
+  - wget
+  - htop
+  - python3-pip
+  - docker.io
+
+runcmd:
+  # Start and enable Docker
+  - systemctl start docker
+  - systemctl enable docker
+  - usermod -aG docker azureuser
+
+  # Create a simple web server
+  - |
+    cat > /opt/server.py << 'EOF'
+    #!/usr/bin/env python3
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+    import socket
+
+    class SimpleHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            hostname = socket.gethostname()
+            html = f"""
+            <html>
+            <body>
+            <h1>Hello from Azure Dev Environment!</h1>
+            <p>Hostname: {hostname}</p>
+            <p>This server is managed by Terraform</p>
+            </body>
+            </html>
+            """
+            self.wfile.write(html.encode())
+
+    if __name__ == '__main__':
+        server = HTTPServer(('0.0.0.0', 5000), SimpleHandler)
+        print('Server running on port 5000...')
+        server.serve_forever()
+    EOF
+
+  # Make it executable
+  - chmod +x /opt/server.py
+
+  # Optional: Run the web server in the background
+  # - nohup python3 /opt/server.py > /var/log/web-server.log 2>&1 &
+
+write_files:
+  - path: /etc/motd
+    content: |
+      ================================
+      Azure Dev Environment
+      Managed by Terraform
+      ================================
+
+final_message: "Cloud-init completed successfully after $UPTIME seconds"

@@ -1,0 +1,109 @@
+#cloud-config
+# Production cloud-init configuration for Azure VM
+
+package_upgrade: true
+
+packages:
+  - git
+  - curl
+  - wget
+  - htop
+  - python3-pip
+  - docker.io
+  - azure-cli
+
+runcmd:
+  # Start and enable Docker
+  - systemctl start docker
+  - systemctl enable docker
+  - usermod -aG docker azureuser
+
+  # Create production web server
+  - |
+    cat > /opt/production-server.py << 'EOF'
+    #!/usr/bin/env python3
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+    import socket
+    import json
+    from datetime import datetime
+    import logging
+
+    # Configure logging
+    logging.basicConfig(
+        filename='/var/log/web-server.log',
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s'
+    )
+
+    class ProductionHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            response = {
+                'status': 'healthy',
+                'environment': 'production',
+                'hostname': socket.gethostname(),
+                'timestamp': datetime.now().isoformat()
+            }
+            self.wfile.write(json.dumps(response).encode())
+            logging.info(f'Request served from {self.client_address[0]}')
+
+        def log_message(self, format, *args):
+            logging.info(format % args)
+
+    if __name__ == '__main__':
+        server = HTTPServer(('0.0.0.0', 5000), ProductionHandler)
+        logging.info('Production server starting on port 5000...')
+        print('Production server running on port 5000...')
+        server.serve_forever()
+    EOF
+
+  # Make it executable
+  - chmod +x /opt/production-server.py
+
+  # Create systemd service
+  - |
+    cat > /etc/systemd/system/web-server.service << 'EOF'
+    [Unit]
+    Description=Production Web Server
+    After=network.target
+
+    [Service]
+    Type=simple
+    User=azureuser
+    WorkingDirectory=/opt
+    ExecStart=/usr/bin/python3 /opt/production-server.py
+    Restart=always
+    RestartSec=10
+
+    [Install]
+    WantedBy=multi-user.target
+    EOF
+
+  # Enable and start the service
+  - systemctl daemon-reload
+  - systemctl enable web-server
+  - systemctl start web-server
+
+write_files:
+  - path: /etc/motd
+    content: |
+      ================================
+      Azure Production Environment
+      Managed by Terraform
+      AUTHORIZED ACCESS ONLY
+      ================================
+
+  - path: /etc/logrotate.d/web-server
+    content: |
+      /var/log/web-server.log {
+          daily
+          rotate 7
+          compress
+          delaycompress
+          missingok
+          notifempty
+      }
+
+final_message: "Production cloud-init completed successfully after $UPTIME seconds"
