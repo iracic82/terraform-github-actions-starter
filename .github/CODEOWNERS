@@ -1,0 +1,29 @@
+# CODEOWNERS file
+# These owners will be the default owners for everything in the repo.
+# Unless a later match takes precedence, they will be requested for
+# review when someone opens a pull request.
+
+# Global owners
+* @iracic82
+
+# Documentation
+/docs/ @iracic82
+*.md @iracic82
+
+# Terraform modules
+/modules/aws/ @iracic82
+/modules/azure/ @iracic82
+
+# Environments - require approval for changes
+/environments/aws-prod/ @iracic82
+/environments/azure-prod/ @iracic82
+
+# GitHub Actions workflows - critical changes
+/.github/workflows/ @iracic82
+
+# Security-sensitive files
+/SECURITY.md @iracic82
+/.github/workflows/*.yml @iracic82
+
+# Scripts
+/scripts/ @iracic82
