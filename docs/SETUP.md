@@ -189,7 +189,7 @@ If you need a token for authentication:
 gh repo create my-terraform-infrastructure --private --clone
 
 # Or create from template
-gh repo create my-terraform-infrastructure --template YOUR_ORG/terraform-github-actions-starter --private --clone
+gh repo create my-terraform-infrastructure --template iracic82/terraform-github-actions-starter --private --clone
 ```
 
 #### Option 2: Using GitHub Web UI
@@ -212,7 +212,7 @@ gh repo create my-terraform-infrastructure --template YOUR_ORG/terraform-github-
 cd ~/projects
 
 # Clone this template repository
-git clone https://github.com/YOUR_ORG/terraform-github-actions-starter.git my-terraform-infrastructure
+git clone https://github.com/iracic82/terraform-github-actions-starter.git my-terraform-infrastructure
 
 # Navigate into the directory
 cd my-terraform-infrastructure
@@ -711,7 +711,7 @@ az account show
 
 ## Support
 
-- GitHub Issues: https://github.com/YOUR_ORG/terraform-github-actions-starter/issues
+- GitHub Issues: https://github.com/iracic82/terraform-github-actions-starter/issues
 - Terraform Docs: https://www.terraform.io/docs
 - AWS Terraform Provider: https://registry.terraform.io/providers/hashicorp/aws/latest/docs
 - Azure Terraform Provider: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs

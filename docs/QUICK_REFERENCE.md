@@ -16,7 +16,7 @@ Cheat sheet for common operations.
 
 ```bash
 # Clone repository
-git clone https://github.com/YOUR_ORG/terraform-github-actions-starter.git
+git clone https://github.com/iracic82/terraform-github-actions-starter.git
 cd terraform-github-actions-starter
 
 # Open in VS Code
@@ -455,6 +455,6 @@ EOF
 
 ## Contact & Support
 
-- **GitHub Issues**: https://github.com/YOUR_ORG/terraform-github-actions-starter/issues
+- **GitHub Issues**: https://github.com/iracic82/terraform-github-actions-starter/issues
 - **Documentation**: See `docs/` folder
 - **Team Chat**: [Your team's Slack/Teams channel]

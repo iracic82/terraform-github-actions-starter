@@ -51,10 +51,10 @@ A production-ready, battle-tested template for managing infrastructure as code u
 
 ```bash
 # Use this repository as a template
-gh repo create my-terraform-infrastructure --template YOUR_ORG/terraform-github-actions-starter --private --clone
+gh repo create my-terraform-infrastructure --template iracic82/terraform-github-actions-starter --private --clone
 
 # Or clone directly
-git clone https://github.com/YOUR_ORG/terraform-github-actions-starter.git my-terraform-infrastructure
+git clone https://github.com/iracic82/terraform-github-actions-starter.git my-terraform-infrastructure
 cd my-terraform-infrastructure
 ```
 
