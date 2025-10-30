@@ -6,10 +6,11 @@ This document explains the system architecture, design decisions, and how all co
 1. [High-Level Architecture](#high-level-architecture)
 2. [Remote State Architecture](#remote-state-architecture)
 3. [GitHub Actions CI/CD Pipeline](#github-actions-cicd-pipeline)
-4. [Module Architecture](#module-architecture)
-5. [Security Model](#security-model)
-6. [State Locking Mechanism](#state-locking-mechanism)
-7. [Environment Isolation](#environment-isolation)
+4. [Plan vs Apply: Workflow Separation Explained](#plan-vs-apply-workflow-separation-explained)
+5. [Module Architecture](#module-architecture)
+6. [Security Model](#security-model)
+7. [State Locking Mechanism](#state-locking-mechanism)
+8. [Environment Isolation](#environment-isolation)
 
 ---
 
@@ -379,6 +380,252 @@ Pull Request Created
 | `terraform-azure-dev.yml` | PR with azure-dev changes | Plan | None |
 | `terraform-aws-prod.yml` | Push to main (aws-prod changes) | Apply | Required |
 | `terraform-azure-prod.yml` | Push to main (azure-prod changes) | Apply | Required |
+
+---
+
+## Plan vs Apply: Workflow Separation Explained
+
+### ⚠️ Critical Concept: Plan Does NOT Trigger Apply
+
+**A successful plan on a Pull Request does NOT automatically trigger apply.**
+
+These are **two completely separate workflows** that run at different times:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  WORKFLOW 1: Plan on Pull Request                           │
+│  File: terraform-aws-dev.yml                                │
+│  ───────────────────────────────────────────────────────    │
+│  Trigger:   pull_request to main                            │
+│  Runs:      terraform plan ONLY                             │
+│  Result:    Posts plan as PR comment                        │
+│  Deploys:   ❌ NO - Nothing deployed                        │
+│  Purpose:   Preview what WOULD happen                       │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+                   [Review & Merge PR]
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│  WORKFLOW 2: Apply on Merge                                 │
+│  File: terraform-aws-prod.yml                               │
+│  ───────────────────────────────────────────────────────    │
+│  Trigger:   push to main                                    │
+│  Runs:      terraform plan + terraform apply                │
+│  Result:    Infrastructure deployed                         │
+│  Deploys:   ✅ YES - Real resources created                 │
+│  Purpose:   Actually deploy infrastructure                  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### How They Work Together
+
+#### Step 1: Developer Creates PR (Plan Workflow)
+
+**Developer Actions:**
+```bash
+git checkout -b feature/add-instance
+# Make changes to environments/aws-dev/main.tf
+git add .
+git commit -m "Add new EC2 instance"
+git push origin feature/add-instance
+gh pr create --title "Add new EC2 instance"
+```
+
+**What Happens:**
+```yaml
+# terraform-aws-dev.yml runs
+on:
+  pull_request:
+    branches: [main]
+    paths: ['environments/aws-dev/**']
+
+jobs:
+  terraform-plan:  # ← Only planning, no apply!
+    - terraform fmt -check
+    - terraform init
+    - terraform validate
+    - terraform plan  # ← Shows what WOULD change
+    - Post plan as PR comment
+```
+
+**Result:**
+- ✅ Plan output posted to PR
+- ✅ Team can review changes
+- ❌ **NO resources deployed**
+- ❌ **NO apply executed**
+
+#### Step 2: Team Reviews and Merges PR (Apply Workflow)
+
+**Team Actions:**
+1. Review the plan in PR comments
+2. Approve the PR
+3. Merge the PR to main
+
+**What Happens:**
+```yaml
+# terraform-aws-prod.yml runs (DIFFERENT workflow!)
+on:
+  push:
+    branches: [main]
+    paths: ['environments/aws-prod/**']
+
+jobs:
+  terraform-apply:  # ← Actually deploys!
+    environment: aws-production  # ← Requires manual approval
+    - terraform init
+    - terraform validate
+    - terraform plan -out=tfplan
+    - terraform apply tfplan  # ← DEPLOYS RESOURCES
+```
+
+**Result:**
+- ⏸️ Workflow waits for manual approval (if GitHub Environment configured)
+- ✅ After approval, **resources actually deployed**
+- ✅ Infrastructure created in AWS/Azure
+
+### Why Two Separate Workflows?
+
+#### 1. Safety & Control
+```
+❌ Auto-apply on successful plan = Dangerous!
+   - Typo in PR → Auto-deployed to production
+   - Accidental changes → Immediately live
+   - No human review → No safety net
+
+✅ Separate workflows = Safe!
+   - Plan on PR → Review changes
+   - Merge as approval → Explicit action
+   - Apply on merge → Intentional deployment
+```
+
+#### 2. Different Triggers, Different Actions
+
+| Aspect | Plan Workflow | Apply Workflow |
+|--------|---------------|----------------|
+| **Trigger Event** | `pull_request` | `push to main` |
+| **When** | PR created/updated | PR merged |
+| **File** | `terraform-aws-dev.yml` | `terraform-aws-prod.yml` |
+| **Environment** | `environments/aws-dev/` | `environments/aws-prod/` |
+| **Terraform Commands** | `plan` only | `plan` + `apply` |
+| **Deploys Resources?** | ❌ NO | ✅ YES |
+| **Requires Approval?** | No | Yes (production) |
+| **Purpose** | Show preview | Execute changes |
+
+#### 3. Workflow Isolation
+
+```yaml
+# Plan workflow (terraform-aws-dev.yml)
+on:
+  pull_request:           # ← Triggered by PR creation
+    branches: [main]
+    paths:
+      - 'environments/aws-dev/**'  # ← Only watches dev files
+
+jobs:
+  terraform-plan:         # ← Job name: plan
+    steps:
+      - terraform plan    # ← No apply step!
+
+# ─────────────────────────────────────────────────────────────
+
+# Apply workflow (terraform-aws-prod.yml)
+on:
+  push:                   # ← Triggered by merge to main
+    branches: [main]
+    paths:
+      - 'environments/aws-prod/**'  # ← Only watches prod files
+
+jobs:
+  terraform-apply:        # ← Job name: apply
+    environment: aws-production     # ← Approval gate
+    steps:
+      - terraform plan -out=tfplan
+      - terraform apply tfplan      # ← Actually deploys!
+```
+
+### Real-World Example
+
+#### Scenario: Add New EC2 Instance
+
+**Step 1: Create PR**
+```bash
+# Edit aws-dev/main.tf to add instance
+git checkout -b add-monitoring-instance
+# ... make changes ...
+git push origin add-monitoring-instance
+gh pr create
+```
+
+**GitHub Actions:**
+- ✅ `terraform-aws-dev.yml` runs
+- ✅ Plan shows: `+ 1 to add, 0 to change, 0 to destroy`
+- ✅ Plan posted as PR comment
+- ❌ Nothing deployed yet!
+
+**You see in PR comment:**
+```
+✅ Plan: 1 to add, 0 to change, 0 to destroy
+
++ resource "aws_instance" "monitoring" {
+    + ami           = "ami-xxx"
+    + instance_type = "t2.micro"
+    ...
+}
+```
+
+**Step 2: Merge PR**
+```bash
+gh pr merge --merge
+```
+
+**GitHub Actions:**
+- ✅ `terraform-aws-prod.yml` runs (different workflow!)
+- ⏸️ Waits for approval (if environment protection enabled)
+- ✅ After approval, applies changes
+- ✅ Instance actually created in AWS
+- ✅ Workflow shows: `Apply complete! Resources: 1 added`
+
+### Common Misconceptions
+
+#### ❌ Misconception 1: "Plan triggers apply automatically"
+**Reality:** They are completely separate workflows. Merging the PR is what triggers apply.
+
+#### ❌ Misconception 2: "Plan and apply are in the same workflow"
+**Reality:** Two different YAML files, two different jobs, two different triggers.
+
+#### ❌ Misconception 3: "If plan succeeds, resources are deployed"
+**Reality:** Plan only shows preview. No resources deployed until apply workflow runs.
+
+#### ❌ Misconception 4: "I merged the PR, why no changes?"
+**Reality:** Check the workflow file paths. Apply only triggers if prod files changed.
+
+### Manual Triggers
+
+You can also manually trigger apply workflows:
+
+```bash
+# Manually deploy to production (bypasses PR)
+gh workflow run "Terraform AWS Prod - Apply"
+
+# Destroy infrastructure
+gh workflow run "Terraform AWS - Destroy" \
+  -f environment=aws-prod \
+  -f confirm=destroy
+```
+
+### Summary: The Golden Rule
+
+```
+╔═══════════════════════════════════════════════════════════╗
+║  PULL REQUEST = PLAN ONLY (no deployment)                 ║
+║  MERGE TO MAIN = APPLY (actual deployment)                ║
+║                                                            ║
+║  These are TWO DIFFERENT workflows!                       ║
+╚═══════════════════════════════════════════════════════════╝
+```
+
+**Best Practice Workflow:**
+1. Create PR → Review plan → Merge → Approve apply → Deployed ✅
 
 ### Security: GitHub Secrets Flow
 
