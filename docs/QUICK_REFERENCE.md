@@ -99,6 +99,23 @@ gh run list
 
 # View workflow logs
 gh run view <RUN_ID>
+
+# Watch a running workflow in real-time
+gh run watch <RUN_ID>
+
+# Manually trigger a workflow (workflow_dispatch)
+gh workflow run "Terraform AWS Prod - Apply"
+
+# Manually trigger destroy workflow with inputs
+gh workflow run "Terraform AWS - Destroy" \
+  -f environment=aws-prod \
+  -f confirm=destroy
+
+# List available workflows
+gh workflow list
+
+# View workflow details
+gh workflow view "Terraform AWS Prod - Apply"
 ```
 
 ### AWS CLI Operations

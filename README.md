@@ -142,6 +142,7 @@ The GitHub Actions workflow will automatically run `terraform plan` and post the
 │   └── workflows/
 │       ├── terraform-aws-dev.yml      # AWS dev workflow (plan on PR)
 │       ├── terraform-aws-prod.yml     # AWS prod workflow (apply on merge)
+│       ├── terraform-aws-destroy.yml  # AWS destroy workflow (manual trigger)
 │       ├── terraform-azure-dev.yml    # Azure dev workflow (plan on PR)
 │       └── terraform-azure-prod.yml   # Azure prod workflow (apply on merge)
 ├── modules/
@@ -206,6 +207,30 @@ See [docs/PHASE_EXPANSION.md](docs/PHASE_EXPANSION.md) for migration guides.
 3. Workflow waits for manual approval (production environment)
 4. After approval, `terraform apply` executes
 5. Infrastructure deployed to production
+
+### Manual Workflow Triggers
+
+Some workflows can be triggered manually using `workflow_dispatch`:
+
+**Manually Deploy Production:**
+```bash
+gh workflow run "Terraform AWS Prod - Apply"
+gh workflow run "Terraform Azure Prod - Apply"
+```
+
+**Destroy Infrastructure:**
+```bash
+# Destroy AWS infrastructure (requires typing "destroy" to confirm)
+gh workflow run "Terraform AWS - Destroy" \
+  -f environment=aws-prod \
+  -f confirm=destroy
+```
+
+**Via GitHub UI:**
+1. Go to **Actions** tab in GitHub
+2. Select the workflow from left sidebar
+3. Click **Run workflow** button
+4. Fill in required inputs and click **Run workflow**
 
 ## 💡 Best Practices
 

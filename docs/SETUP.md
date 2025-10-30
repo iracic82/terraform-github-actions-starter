@@ -585,6 +585,45 @@ When you merge to `main`, the production workflow runs:
 - Select the environment and approve
 - Terraform apply runs
 
+### Manually Trigger Workflows
+
+You can manually trigger workflows using GitHub CLI or the GitHub UI:
+
+#### Using GitHub CLI
+
+```bash
+# Trigger production workflow manually
+gh workflow run "Terraform AWS Prod - Apply"
+
+# Trigger destroy workflow with confirmation
+gh workflow run "Terraform AWS - Destroy" \
+  -f environment=aws-prod \
+  -f confirm=destroy
+
+# List all available workflows
+gh workflow list
+
+# View recent workflow runs
+gh run list
+
+# Watch a workflow in real-time
+gh run watch <RUN_ID>
+```
+
+#### Using GitHub UI
+
+1. Go to your GitHub repository
+2. Click the **Actions** tab
+3. Select the workflow from the left sidebar
+4. Click **Run workflow** button (top right)
+5. Select branch and fill in any required inputs
+6. Click **Run workflow**
+
+**Available Manual Workflows:**
+- `Terraform AWS Prod - Apply` - Deploy to AWS production
+- `Terraform Azure Prod - Apply` - Deploy to Azure production
+- `Terraform AWS - Destroy` - Destroy AWS infrastructure (requires confirmation)
+
 ---
 
 ## Troubleshooting
