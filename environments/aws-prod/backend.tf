@@ -1,12 +1,10 @@
 terraform {
   backend "s3" {
-    # UPDATE THESE VALUES after running the backend setup script
-    bucket         = "terraform-state-ACCOUNT_ID-REGION"  # Replace with your bucket name
+    bucket         = "terraform-state-688664532084-us-east-1"
     key            = "aws-prod/terraform.tfstate"
-    region         = "us-east-1"  # Replace with your region
+    region         = "us-east-1"
     dynamodb_table = "terraform-state-lock"
     encrypt        = true
-    # Uncomment after KMS key is created
-    # kms_key_id     = "arn:aws:kms:REGION:ACCOUNT_ID:key/KEY_ID"
+    kms_key_id     = "arn:aws:kms:us-east-1:688664532084:key/66457d60-cb55-4831-ae05-bf316a41ee1b"
   }
 }

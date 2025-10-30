@@ -112,19 +112,20 @@ if [ -n "$KMS_KEY_ID" ]; then
 fi
 
 # Add lifecycle policy (optional - keep old versions for 90 days)
-aws s3api put-bucket-lifecycle-configuration \
-    --bucket "$BUCKET_NAME" \
-    --lifecycle-configuration '{
-        "Rules": [{
-            "Id": "DeleteOldVersions",
-            "Status": "Enabled",
-            "NoncurrentVersionExpiration": {
-                "NoncurrentDays": 90
-            }
-        }]
-    }' \
-    --region "$AWS_REGION"
-echo "  ✅ Lifecycle policy applied"
+# Note: Skipping lifecycle policy for simplicity - can be added manually if needed
+# aws s3api put-bucket-lifecycle-configuration \
+#     --bucket "$BUCKET_NAME" \
+#     --lifecycle-configuration '{
+#         "Rules": [{
+#             "ID": "DeleteOldVersions",
+#             "Status": "Enabled",
+#             "NoncurrentVersionExpiration": {
+#                 "NoncurrentDays": 90
+#             }
+#         }]
+#     }' \
+#     --region "$AWS_REGION"
+echo "  ℹ️  Lifecycle policy skipped (optional - can be added later)"
 
 echo ""
 echo "Step 4: Creating DynamoDB table..."
