@@ -2,6 +2,19 @@
 
 This guide walks you through the complete setup process from scratch.
 
+## 👥 Which Guide Should I Use?
+
+**Choose the right guide based on your role:**
+
+| Your Situation | Guide to Follow | What You'll Do |
+|----------------|-----------------|----------------|
+| 🚀 **First team member** creating a new project from this template | **This guide (SETUP.md)** | Clone template, create new repo, set up backend, configure secrets |
+| 👤 **Additional team member** joining an existing project | **[TEAM_MEMBER_SETUP.md](TEAM_MEMBER_SETUP.md)** | Clone existing repo, configure local credentials, start working |
+
+**⚠️ Important:** If someone on your team already set up the project, DO NOT follow this guide! Use [TEAM_MEMBER_SETUP.md](TEAM_MEMBER_SETUP.md) instead to avoid creating duplicate resources.
+
+---
+
 ## Table of Contents
 1. [Prerequisites](#prerequisites)
 2. [VS Code Setup](#vs-code-setup)

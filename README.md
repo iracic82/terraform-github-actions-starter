@@ -40,6 +40,10 @@ A production-ready, battle-tested template for managing infrastructure as code u
 
 ## 🚀 Quick Start
 
+> **👥 Team Collaboration Note:**
+> - **First team member?** Follow the Quick Start below, then see [SETUP.md](docs/SETUP.md) for complete instructions
+> - **Joining existing project?** Skip this and go to [TEAM_MEMBER_SETUP.md](docs/TEAM_MEMBER_SETUP.md) instead
+
 ### Prerequisites
 
 - GitHub repository with admin access
@@ -186,9 +190,16 @@ See [docs/PHASE_EXPANSION.md](docs/PHASE_EXPANSION.md) for migration guides.
 
 ## 📚 Documentation
 
-- [Detailed Setup Guide](docs/SETUP.md) - Step-by-step setup instructions
+### Setup Guides
+
+- **[SETUP.md](docs/SETUP.md)** - For the **first team member** setting up a new project from this template
+- **[TEAM_MEMBER_SETUP.md](docs/TEAM_MEMBER_SETUP.md)** - For **additional team members** joining an existing project
+
+### Architecture & Advanced Topics
+
 - [Architecture Overview](docs/ARCHITECTURE.md) - System design and components
 - [Phase Expansion Guide](docs/PHASE_EXPANSION.md) - How to expand to OIDC and Vault
+- [Quick Reference](docs/QUICK_REFERENCE.md) - Command cheat sheet
 
 ## ⚙️ Workflows Explained
 
